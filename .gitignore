@@ -1,0 +1,49 @@
+# ---- Secrets / environment ----
+.env
+.env.*
+!.env.example
+!.env.local.example
+*.pem
+*.key
+# Clerk may write secrets here
+.clerk/
+
+# ---- Python (backend) ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- Vector store / uploads (runtime data) ----
+backend/faiss_index/*
+!backend/faiss_index/.gitkeep
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# ---- Node / Next.js (frontend) ----
+node_modules/
+.next/
+out/
+build/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+.vercel/
+
+# ---- Logs ----
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
