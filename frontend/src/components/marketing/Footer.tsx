@@ -12,10 +12,10 @@ const LINKS = [
 
 export function Footer() {
   return (
-    <footer className="border-t border-border py-10">
+    <footer className="border-t border-ink-border py-10">
       <Container className="flex flex-col items-center justify-between gap-6 sm:flex-row">
-        <div className="flex items-center gap-2 text-sm font-medium">
-          <Sparkles className="h-4 w-4 text-primary" aria-hidden="true" />
+        <div className="flex items-center gap-2 text-[14px] font-medium text-ink-primary">
+          <Sparkles className="h-4 w-4 text-accent" strokeWidth={1.75} aria-hidden />
           {APP_NAME}
         </div>
 
@@ -24,7 +24,7 @@ export function Footer() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              className="text-[13px] text-ink-secondary transition-colors hover:text-ink-primary"
             >
               {link.label}
             </Link>
@@ -32,7 +32,7 @@ export function Footer() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <span className="text-xs text-muted-foreground">
+          <span className="text-[12px] text-ink-muted">
             © {new Date().getFullYear()} {APP_NAME}
           </span>
           <ThemeToggle />

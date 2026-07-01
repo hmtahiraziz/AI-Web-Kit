@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Menu, Sparkles, X } from "lucide-react";
-import { APP_NAME } from "@/lib/constants";
-import { SidebarNav } from "@/components/layout/sidebar-nav";
-import { Button } from "@/components/ui/button";
+import { Menu, X } from "lucide-react";
+import { SidebarLogo, SidebarNav, SidebarUserFooter } from "@/components/layout/sidebar-nav";
 
 export function MobileMenu() {
   const [open, setOpen] = useState(false);
@@ -13,34 +11,34 @@ export function MobileMenu() {
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="lg:hidden"
+        <button
+          type="button"
+          className="flex h-9 w-9 items-center justify-center rounded-btn text-ink-secondary hover:bg-gray-50 lg:hidden"
           aria-label="Open navigation menu"
         >
-          <Menu className="h-5 w-5" />
-        </Button>
+          <Menu className="h-5 w-5" strokeWidth={1.75} />
+        </button>
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 lg:hidden" />
-        <Dialog.Content className="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[80vw] flex-col border-r border-border bg-card p-4 shadow-lg focus:outline-none lg:hidden">
-          <div className="mb-4 flex items-center justify-between">
-            <Dialog.Title className="flex items-center gap-2 font-semibold">
-              <Sparkles className="h-5 w-5 text-primary" aria-hidden="true" />
-              {APP_NAME}
-            </Dialog.Title>
+        <Dialog.Content className="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[80vw] flex-col border-r border-ink-border bg-surface shadow-card focus:outline-none lg:hidden">
+          <div className="flex items-center justify-between border-b border-ink-border px-4 py-4">
+            <Dialog.Title className="sr-only">Navigation</Dialog.Title>
+            <SidebarLogo />
             <Dialog.Close
               aria-label="Close navigation menu"
-              className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="rounded-btn p-1 text-ink-muted hover:bg-gray-50 hover:text-ink-primary"
             >
-              <X className="h-4 w-4" />
+              <X className="h-[18px] w-[18px]" strokeWidth={1.75} />
             </Dialog.Close>
           </div>
           <Dialog.Description className="sr-only">
             Application navigation
           </Dialog.Description>
-          <SidebarNav onNavigate={() => setOpen(false)} />
+          <div className="flex-1 overflow-y-auto p-3">
+            <SidebarNav onNavigate={() => setOpen(false)} />
+          </div>
+          <SidebarUserFooter />
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

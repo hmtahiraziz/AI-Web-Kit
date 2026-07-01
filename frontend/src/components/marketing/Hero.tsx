@@ -1,10 +1,9 @@
 import * as React from "react";
 import type { LucideIcon } from "lucide-react";
-import { Eyebrow } from "@/components/ui/eyebrow";
 
 export function Hero({
   eyebrow,
-  eyebrowIcon,
+  eyebrowIcon: EyebrowIcon,
   title,
   subtitle,
   actions,
@@ -19,14 +18,28 @@ export function Hero({
     <div className="relative">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 -top-24 -z-10 h-72 bg-[radial-gradient(60%_60%_at_50%_0%,theme(colors.primary/0.14),transparent)]"
-      />
+        className="pointer-events-none absolute inset-x-0 -top-24 -z-10 flex justify-center"
+      >
+        <div
+          className="h-48 w-48 rounded-full opacity-60"
+          style={{
+            background:
+              "radial-gradient(circle, #C7D2FE 0%, #A5B4FC 50%, #818CF8 100%)",
+            filter: "blur(32px)",
+          }}
+        />
+      </div>
       <div className="mx-auto max-w-3xl space-y-5 text-center">
-        <Eyebrow icon={eyebrowIcon}>{eyebrow}</Eyebrow>
-        <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">
+        {EyebrowIcon && (
+          <p className="inline-flex items-center gap-2 rounded-pill border border-ink-border bg-accent-light px-3 py-1 text-[12px] font-medium tracking-wide text-accent-dark">
+            <EyebrowIcon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+            {eyebrow}
+          </p>
+        )}
+        <h1 className="text-4xl font-semibold tracking-tight text-ink-primary sm:text-5xl">
           {title}
         </h1>
-        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+        <p className="mx-auto max-w-2xl text-lg text-ink-secondary">
           {subtitle}
         </p>
         {actions && (

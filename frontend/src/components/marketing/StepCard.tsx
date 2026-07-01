@@ -1,10 +1,4 @@
 import type { LucideIcon } from "lucide-react";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
 
 export type Step = {
   icon: LucideIcon;
@@ -19,17 +13,15 @@ export function StepCard({
   description,
 }: Step & { step: number }) {
   return (
-    <Card className="h-full">
-      <CardHeader>
-        <div className="mb-3 flex items-center gap-3">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-            {step}
-          </span>
-          <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
-        </div>
-        <CardTitle className="text-base">{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-    </Card>
+    <div className="h-full rounded-card border border-ink-border bg-surface p-5 shadow-card">
+      <div className="mb-3 flex items-center gap-3">
+        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-accent text-sm font-semibold text-white">
+          {step}
+        </span>
+        <Icon className="h-5 w-5 text-accent" strokeWidth={1.75} aria-hidden />
+      </div>
+      <p className="text-[15px] font-medium text-ink-primary">{title}</p>
+      <p className="mt-1 text-[13px] text-ink-secondary">{description}</p>
+    </div>
   );
 }

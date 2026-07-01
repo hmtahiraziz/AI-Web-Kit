@@ -14,8 +14,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.api import auth, documents, health, ingest, query
+from app.api import auth, chat, documents, health, ingest, query
 from app.core.config import get_settings
+from app.core.dependencies import clear_dependency_caches
 from app.core.exceptions import AppError
 from app.core.logger import get_logger
 
@@ -40,14 +41,19 @@ def create_app() -> FastAPI:
 
     @app.on_event("startup")
     def _startup() -> None:
+        clear_dependency_caches()
+        settings = get_settings()
         settings.ensure_dirs()
-        logger.info("SA AI Web Kit API v%s started", settings.app_version)
+        paths = sorted(app.openapi().get("paths", {}).keys())
+        logger.info("SA AI Web Kit API v%s started (%d routes)", settings.app_version, len(paths))
+        for path in paths:
+            logger.info("  %s", path)
 
     return app
 
 
 def _register_routers(app: FastAPI) -> None:
-    for module in (health, auth, ingest, documents, query):
+    for module in (health, auth, ingest, documents, query, chat):
         app.include_router(module.router, prefix="/api")
 
 

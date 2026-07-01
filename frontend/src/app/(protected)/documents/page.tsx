@@ -4,11 +4,11 @@ import { UploadDocumentButton } from "@/components/chat/UploadDocumentButton";
 
 export default function DocumentsPage() {
   return (
-    <div className="space-y-6">
+    <div>
       <PageHeader
         title="Documents"
         description="Upload and manage the files that power your knowledge base."
-        action={<UploadDocumentButton />}
+        action={<UploadDocumentButton variant="default" />}
       />
       <DocumentsView />
     </div>

@@ -70,6 +70,13 @@ class RAGService:
         citations = self._citations.build(chunks)
         return QueryResponse(answer=answer, citations=citations)
 
+    def citations_for(self, question: str, top_k: int | None = None):
+        """Return citations for retrieved chunks without calling the LLM."""
+        chunks = self._retrieval.retrieve(question, k=top_k)
+        if not chunks:
+            return []
+        return self._citations.build(chunks)
+
     def answer_stream(self, question: str, top_k: int | None = None) -> Iterator[str]:
         """Yield plain-text answer tokens progressively."""
         chunks = self._retrieval.retrieve(question, k=top_k)

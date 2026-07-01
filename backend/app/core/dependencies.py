@@ -14,6 +14,7 @@ from fastapi import Depends, Header
 from app.core.config import Settings, get_settings
 from app.core.exceptions import AuthError
 from app.core.security import AuthenticatedUser, get_verifier
+from app.services.chat_service import ChatService
 from app.services.chunk_service import ChunkService
 from app.services.citation_service import CitationService
 from app.services.document_loader import DocumentLoaderService
@@ -29,6 +30,14 @@ from app.vectorstore.faiss_store import FAISSStore
 # --- singletons --------------------------------------------------------------
 
 
+def clear_dependency_caches() -> None:
+    """Drop cached settings and services (e.g. after ``.env`` changes)."""
+    get_settings.cache_clear()
+    get_llm_service.cache_clear()
+    get_embedding_service.cache_clear()
+    get_faiss_store.cache_clear()
+
+
 @lru_cache(maxsize=1)
 def get_embedding_service() -> EmbeddingService:
     return EmbeddingService(get_settings())
@@ -37,7 +46,11 @@ def get_embedding_service() -> EmbeddingService:
 @lru_cache(maxsize=1)
 def get_faiss_store() -> FAISSStore:
     settings = get_settings()
-    store = FAISSStore(settings.faiss_index_path, get_embedding_service().embeddings)
+    store = FAISSStore(
+        settings.faiss_index_path,
+        get_embedding_service().embeddings,
+        embedding_dim=settings.gemini_embedding_dimension,
+    )
     store.load_index()
     return store
 
@@ -74,6 +87,10 @@ def get_rag_service() -> RAGService:
     )
 
 
+def get_chat_service() -> ChatService:
+    return ChatService(get_llm_service())
+
+
 # --- auth --------------------------------------------------------------------
 
 
@@ -101,4 +118,5 @@ CurrentUser = Annotated[AuthenticatedUser, Depends(get_current_user)]
 IngestServiceDep = Annotated[IngestService, Depends(get_ingest_service)]
 DocumentsServiceDep = Annotated[DocumentsService, Depends(get_documents_service)]
 RAGServiceDep = Annotated[RAGService, Depends(get_rag_service)]
+ChatServiceDep = Annotated[ChatService, Depends(get_chat_service)]
 SettingsDep = Annotated[Settings, Depends(get_settings)]

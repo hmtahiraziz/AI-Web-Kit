@@ -2,7 +2,7 @@
 
 Run locally:
     pip install -r requirements.txt
-    cp .env.example .env   # then fill in OPENAI_API_KEY etc.
+    cp .env.example .env   # then fill in GOOGLE_API_KEY etc.
     uvicorn main:app --reload --port 8000
 """
 

@@ -1,19 +1,29 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { Navbar } from "@/components/layout/Navbar";
+import { Topbar } from "@/components/layout/Topbar";
 import { useRegisterAuthToken } from "@/services/auth";
+import { cn } from "@/lib/utils";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   useRegisterAuthToken();
+  const pathname = usePathname();
+  const isChat =
+    pathname === "/chat" || pathname.startsWith("/chat/");
 
   return (
-    <div className="flex min-h-screen w-full">
+    <div className="flex h-screen w-full overflow-hidden">
       <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Navbar />
-        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
-          <div className="mx-auto w-full max-w-6xl">{children}</div>
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-canvas">
+        <Topbar />
+        <main
+          className={cn(
+            "flex-1",
+            isChat ? "overflow-hidden" : "overflow-auto p-8",
+          )}
+        >
+          {children}
         </main>
       </div>
     </div>

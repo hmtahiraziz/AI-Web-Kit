@@ -1,6 +1,10 @@
+export { ChatModeToggle } from "./ChatModeToggle";
 export { ChatWindow } from "./ChatWindow";
 export { ChatMessage } from "./ChatMessage";
 export { ChatInput } from "./ChatInput";
 export { CitationCard } from "./CitationCard";
+export { ConversationSidebar } from "./ConversationSidebar";
 export { TypingIndicator } from "./TypingIndicator";
 export { UploadDocumentButton } from "./UploadDocumentButton";
+export { CitationsPanel } from "./CitationsPanel";
+export { PromptSuggestion } from "./PromptSuggestion";

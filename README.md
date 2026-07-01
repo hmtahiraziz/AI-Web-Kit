@@ -8,7 +8,7 @@ clean separation between a **Next.js frontend** and a **FastAPI + FAISS backend*
 ```text
 sa-ai-web-kit/
 ├── frontend/      # Next.js app (Clerk auth, design system, chat UI, API client)
-├── backend/       # FastAPI RAG service (LangChain + FAISS + OpenAI)
+├── backend/       # FastAPI RAG service (LangChain + FAISS + Gemini)
 ├── docs/          # Setup & architecture docs
 └── README.md
 ```
@@ -35,8 +35,8 @@ cd backend
 python -m venv .venv
 .venv\Scripts\activate               # Windows  (use: source .venv/bin/activate on macOS/Linux)
 pip install -r requirements.txt
-cp .env.example .env               # set OPENAI_API_KEY; AUTH_DISABLED=true for local dev
-uvicorn main:app --reload --port 8000
+cp .env.example .env               # set GOOGLE_API_KEY; AUTH_DISABLED=true for local dev
+.\.venv\Scripts\python.exe -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 Visit `http://localhost:8000/api/health` → `{"status":"healthy","version":"1.0.0"}`.
@@ -69,4 +69,4 @@ The backend-status badge turns green when the API is reachable.
 | Client state | Zustand |
 | Theming | next-themes (class-based dark mode) |
 | UI | Custom design system + Radix Dialog + Sonner |
-| Backend | FastAPI, LangChain, FAISS, OpenAI |
+| Backend | FastAPI, LangChain, FAISS, Google Gemini |

@@ -1,25 +1,19 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { Inbox, Search, Trash2, Upload } from "lucide-react";
+import { FileText, Search, Trash2, Upload } from "lucide-react";
 import {
   useDeleteDocument,
   useDocuments,
   useUploadDocument,
 } from "@/hooks/use-documents";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader } from "@/components/ui/loader";
 import { Modal } from "@/components/ui/modal";
-import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
-import {
-  formatFileSize,
-  getFileTypeColor,
-  getFileTypeIcon,
-} from "@/lib/file-utils";
+import { formatFileSize } from "@/lib/file-utils";
 import type { UploadedDocument } from "@/types/document";
 
 function statusVariant(status: UploadedDocument["status"]) {
@@ -67,7 +61,7 @@ export function DocumentsView() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="mt-6 space-y-4">
       <input
         ref={inputRef}
         type="file"
@@ -82,29 +76,32 @@ export function DocumentsView() {
 
       {data && data.length > 0 && (
         <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted"
+            strokeWidth={1.75}
+          />
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search documents…"
-            className="pl-9"
+            className="rounded-btn border-ink-border pl-9 text-[14px]"
             aria-label="Search documents"
           />
         </div>
       )}
 
       {uploadMutation.isPending && (
-        <Card>
-          <CardContent className="flex items-center gap-3 p-4">
-            <Loader className="h-5 w-5" />
-            <div>
-              <p className="text-sm font-medium">Processing upload…</p>
-              <p className="text-xs text-muted-foreground">
-                Extracting text and generating embeddings.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center gap-3 rounded-card border border-ink-border bg-surface p-4 shadow-card">
+          <Loader className="h-5 w-5" />
+          <div>
+            <p className="text-[14px] font-medium text-ink-primary">
+              Processing upload…
+            </p>
+            <p className="text-[12px] text-ink-muted">
+              Extracting text and generating embeddings.
+            </p>
+          </div>
+        </div>
       )}
 
       {isLoading && (
@@ -114,11 +111,14 @@ export function DocumentsView() {
       )}
 
       {isError && (
-        <EmptyState
-          icon={Inbox}
-          title="Could not reach the backend"
-          description="Documents will appear here once the RAG service is connected."
-        />
+        <div className="rounded-card border border-ink-border p-8 text-center">
+          <p className="text-[14px] font-medium text-ink-primary">
+            Could not reach the backend
+          </p>
+          <p className="mt-1 text-[13px] text-ink-secondary">
+            Documents will appear here once the RAG service is connected.
+          </p>
+        </div>
       )}
 
       {!isLoading && !isError && data?.length === 0 && (
@@ -138,70 +138,64 @@ export function DocumentsView() {
           onDrop={handleDrop}
           onClick={() => inputRef.current?.click()}
           className={cn(
-            "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-14 text-center transition-colors",
+            "flex cursor-pointer flex-col items-center justify-center rounded-card border-[1.5px] border-dashed p-16 text-center transition-all",
             isDragging
-              ? "border-primary bg-primary/5"
-              : "border-border hover:border-primary/40 hover:bg-muted/30",
+              ? "border-accent bg-accent-light/30"
+              : "border-gray-300 hover:border-accent hover:bg-accent-light/30",
           )}
         >
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Upload className="h-6 w-6" aria-hidden="true" />
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent-light">
+            <Upload className="h-6 w-6 text-accent" strokeWidth={1.75} />
           </div>
-          <div>
-            <p className="font-medium">Drop a file here or click to upload</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Supports PDF, TXT, and Markdown files.
-            </p>
-          </div>
+          <p className="text-[16px] font-medium text-ink-primary">
+            Drop a file here or click to upload
+          </p>
+          <p className="mt-1 text-[13px] text-ink-muted">
+            Supports PDF, TXT, and Markdown files.
+          </p>
         </div>
       )}
 
       {!isLoading && !isError && data && data.length > 0 && (
-        <div className="grid gap-3">
+        <div className="space-y-2">
           {filtered.length === 0 && (
-            <p className="py-8 text-center text-sm text-muted-foreground">
+            <p className="py-8 text-center text-[13px] text-ink-muted">
               No documents match &ldquo;{search}&rdquo;.
             </p>
           )}
-          {filtered.map((doc) => {
-            const Icon = getFileTypeIcon(doc.filename);
-            const iconColor = getFileTypeColor(doc.filename);
-            return (
-              <Card key={doc.id}>
-                <CardContent className="flex items-center justify-between gap-4 p-4">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <Icon
-                      className={cn("h-5 w-5 shrink-0", iconColor)}
-                      aria-hidden="true"
-                    />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">
-                        {doc.filename}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatFileSize(doc.size)}
-                        {doc.chunks ? ` · ${doc.chunks} chunks` : ""}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <Badge variant={statusVariant(doc.status)}>
-                      {doc.status}
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Delete ${doc.filename}`}
-                      disabled={deleteMutation.isPending}
-                      onClick={() => setPendingDelete(doc)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+          {filtered.map((doc) => (
+            <div
+              key={doc.id}
+              className="flex items-center gap-3 rounded-card border border-ink-border bg-surface px-4 py-3 shadow-card"
+            >
+              <FileText
+                className="h-[18px] w-[18px] shrink-0 text-accent"
+                strokeWidth={1.75}
+                aria-hidden="true"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[14px] font-medium text-ink-primary">
+                  {doc.filename}
+                </p>
+                <p className="text-[12px] text-ink-muted">
+                  {formatFileSize(doc.size)}
+                  {doc.chunks ? ` · ${doc.chunks} chunks` : ""}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <Badge variant={statusVariant(doc.status)}>{doc.status}</Badge>
+                <button
+                  type="button"
+                  aria-label={`Delete ${doc.filename}`}
+                  disabled={deleteMutation.isPending}
+                  onClick={() => setPendingDelete(doc)}
+                  className="rounded-btn p-1.5 text-ink-muted transition-colors hover:text-red-500"
+                >
+                  <Trash2 className="h-4 w-4" strokeWidth={1.75} />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

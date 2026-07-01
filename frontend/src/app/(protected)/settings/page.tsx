@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function SettingsPage() {
   return (
-    <div className="space-y-6">
+    <div>
       <PageHeader
         title="Settings"
         description="Manage your account, appearance, and workspace preferences."

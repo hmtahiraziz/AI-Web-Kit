@@ -2,11 +2,13 @@ import { apiClient } from "@/services/api/client";
 import { API_URL } from "@/lib/env";
 import { getAuthToken } from "@/services/auth/token";
 import type {
+  CitationsResponse,
   DeleteDocumentResponse,
   HealthResponse,
   QueryRequest,
   QueryResponse,
 } from "@/types/api";
+import type { Citation } from "@/types/chat";
 import type {
   UploadDocumentResponse,
   UploadedDocument,
@@ -19,6 +21,7 @@ import type {
  *   GET    /documents
  *   DELETE /documents/{id}
  *   POST   /query            (non-streaming)
+ *   POST   /query/citations   (retrieval citations only)
  *   POST   /query/stream     (plain text stream)
  *
  * Base URL should include the /api prefix (e.g. http://localhost:8000/api).
@@ -62,6 +65,25 @@ export async function queryRag(payload: QueryRequest): Promise<QueryResponse> {
   return data;
 }
 
+export async function fetchCitations(
+  payload: QueryRequest,
+): Promise<Citation[]> {
+  const { data } = await apiClient.post<CitationsResponse>(
+    "/query/citations",
+    payload,
+  );
+  return data.citations;
+}
+
+async function readStreamError(response: Response): Promise<string> {
+  try {
+    const body = (await response.json()) as { detail?: string; message?: string };
+    return body.detail ?? body.message ?? `Request failed (${response.status})`;
+  } catch {
+    return `Request failed (${response.status})`;
+  }
+}
+
 /**
  * Streaming query. Axios cannot stream response bodies in the browser, so we
  * use fetch + ReadableStream. Yields incremental plain-text token deltas.
@@ -83,9 +105,7 @@ export async function* streamQuery(
   });
 
   if (!response.ok || !response.body) {
-    throw new Error(
-      `Streaming request failed with status ${response.status}`,
-    );
+    throw new Error(await readStreamError(response));
   }
 
   const reader = response.body.getReader();
@@ -98,6 +118,8 @@ export async function* streamQuery(
       const chunk = decoder.decode(value, { stream: true });
       if (chunk) yield chunk;
     }
+    const tail = decoder.decode();
+    if (tail) yield tail;
   } finally {
     reader.releaseLock();
   }

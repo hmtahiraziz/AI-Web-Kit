@@ -1,12 +1,11 @@
 "use client";
 
-import { Copy, Check } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 import { useState } from "react";
 import type { ChatMessage as ChatMessageType } from "@/types/chat";
-import { Avatar } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TypingIndicator } from "@/components/chat/TypingIndicator";
+import { StreamingCursor } from "@/components/chat/StreamingCursor";
 
 export function ChatMessage({
   message,
@@ -17,6 +16,7 @@ export function ChatMessage({
 }) {
   const isUser = message.role === "user";
   const showTyping = !isUser && isStreaming && message.content.length === 0;
+  const showCursor = !isUser && isStreaming && message.content.length > 0;
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
@@ -27,49 +27,39 @@ export function ChatMessage({
   }
 
   return (
-    <div
-      className={cn(
-        "group flex gap-3",
-        isUser ? "justify-end" : "justify-start",
-      )}
-    >
-      {!isUser && <Avatar name="AI" />}
-      <div className="flex max-w-[85%] flex-col gap-1">
+    <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
+      <div className="group max-w-[75%]">
         <div
           className={cn(
-            "rounded-2xl px-4 py-3 text-sm leading-6 whitespace-pre-wrap break-words",
+            "rounded-[16px] px-4 py-3 text-[14px] leading-relaxed whitespace-pre-wrap break-words",
             isUser
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-foreground",
+              ? "bg-accent text-white"
+              : "rounded-tl-sm bg-accent-light text-ink-primary",
           )}
         >
           {showTyping ? <TypingIndicator /> : message.content}
+          {showCursor && <StreamingCursor />}
         </div>
         {!isUser && message.content && !showTyping && (
-          <div className="flex opacity-0 transition-opacity group-hover:opacity-100">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 gap-1 px-2 text-xs text-muted-foreground"
-              onClick={() => void handleCopy()}
-            >
-              {copied ? (
-                <>
-                  <Check className="h-3 w-3" />
-                  Copied
-                </>
-              ) : (
-                <>
-                  <Copy className="h-3 w-3" />
-                  Copy
-                </>
-              )}
-            </Button>
-          </div>
+          <button
+            type="button"
+            onClick={() => void handleCopy()}
+            className="mt-1 flex items-center gap-1 px-1 text-[12px] text-ink-muted opacity-0 transition-opacity group-hover:opacity-100 hover:text-ink-secondary"
+          >
+            {copied ? (
+              <>
+                <Check className="h-3 w-3" strokeWidth={1.75} />
+                Copied
+              </>
+            ) : (
+              <>
+                <Copy className="h-3 w-3" strokeWidth={1.75} />
+                Copy
+              </>
+            )}
+          </button>
         )}
       </div>
-      {isUser && <Avatar name="You" />}
     </div>
   );
 }

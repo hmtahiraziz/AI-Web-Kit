@@ -1,19 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
-  FileText,
-  MessageSquare,
-  Settings as SettingsIcon,
-  Layers,
   Activity,
+  FileText,
+  Layers,
+  MessageSquare,
+  Settings,
+  File,
 } from "lucide-react";
 import { useDocuments } from "@/hooks/use-documents";
 import { useHealth } from "@/hooks/use-health";
-import { StatCard } from "@/components/dashboard/StatCard";
-import { QuickActionCard } from "@/components/dashboard/QuickActionCard";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { StatCard } from "@/components/ui/StatCard";
+import { ActionCard } from "@/components/ui/ActionCard";
 import { Loader } from "@/components/ui/loader";
 
 const QUICK_ACTIONS = [
@@ -33,7 +33,7 @@ const QUICK_ACTIONS = [
     href: "/settings",
     title: "Settings",
     description: "Manage your account, theme, and workspace preferences.",
-    icon: SettingsIcon,
+    icon: Settings,
   },
 ];
 
@@ -42,6 +42,7 @@ function isBackendOnline(status: string | undefined) {
 }
 
 export function DashboardView({ firstName }: { firstName?: string | null }) {
+  const router = useRouter();
   const { data: documents, isLoading: docsLoading } = useDocuments();
   const { data: health, isLoading: healthLoading, isError: healthError } =
     useHealth();
@@ -59,99 +60,101 @@ export function DashboardView({ firstName }: { firstName?: string | null }) {
   const recentDocs = documents?.slice(0, 3) ?? [];
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="mt-2 text-muted-foreground">
-          Welcome{firstName ? `, ${firstName}` : ""}. Here&apos;s what&apos;s
-          happening in your workspace.
-        </p>
-      </div>
+    <div>
+      <h1 className="text-[24px] font-semibold text-ink-primary">Dashboard</h1>
+      <p className="mt-1 text-[14px] text-ink-secondary">
+        Welcome{firstName ? `, ${firstName}` : ""}. Here&apos;s what&apos;s
+        happening in your workspace.
+      </p>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
-          label="Documents"
+          icon={<File className="h-[22px] w-[22px] text-accent" strokeWidth={1.75} />}
           value={docsLoading ? "—" : docCount}
-          icon={FileText}
+          label="Documents"
         />
         <StatCard
-          label="Total chunks"
+          icon={<Layers className="h-[22px] w-[22px] text-accent" strokeWidth={1.75} />}
           value={docsLoading ? "—" : chunkCount}
-          icon={Layers}
+          label="Total chunks"
         />
-        <StatCard label="Backend" value={backendLabel} icon={Activity} />
+        <StatCard
+          icon={<Activity className="h-[22px] w-[22px] text-accent" strokeWidth={1.75} />}
+          value={backendLabel}
+          label="Backend"
+        />
       </div>
 
-      <div>
-        <h2 className="mb-4 text-lg font-semibold tracking-tight">
-          Quick actions
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {QUICK_ACTIONS.map((action) => (
-            <QuickActionCard key={action.href} {...action} />
-          ))}
+      <p className="mb-4 mt-8 text-[11px] font-medium uppercase tracking-widest text-ink-muted">
+        Quick actions
+      </p>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {QUICK_ACTIONS.map((action) => {
+          const Icon = action.icon;
+          return (
+            <ActionCard
+              key={action.href}
+              icon={<Icon className="h-[22px] w-[22px] text-accent" strokeWidth={1.75} />}
+              title={action.title}
+              description={action.description}
+              onClick={() => router.push(action.href)}
+            />
+          );
+        })}
+      </div>
+
+      <p className="mb-4 mt-8 text-[11px] font-medium uppercase tracking-widest text-ink-muted">
+        Recent documents
+      </p>
+
+      {docsLoading && (
+        <div className="flex justify-center py-10">
+          <Loader />
         </div>
-      </div>
+      )}
 
-      <div>
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold tracking-tight">
-            Recent documents
-          </h2>
-          {docCount > 0 && (
+      {!docsLoading && recentDocs.length === 0 && (
+        <div className="rounded-card border border-ink-border p-8 text-center">
+          <p className="text-[14px] text-ink-secondary">
+            No documents yet.{" "}
+            <Link href="/documents" className="text-accent hover:underline">
+              Upload your first file
+            </Link>{" "}
+            to get started.
+          </p>
+        </div>
+      )}
+
+      {!docsLoading && recentDocs.length > 0 && (
+        <div className="space-y-2">
+          {recentDocs.map((doc) => (
+            <div
+              key={doc.id}
+              className="flex items-center gap-3 rounded-card border border-ink-border bg-surface px-4 py-3 shadow-card"
+            >
+              <FileText
+                className="h-[18px] w-[18px] shrink-0 text-accent"
+                strokeWidth={1.75}
+                aria-hidden="true"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[14px] font-medium text-ink-primary">
+                  {doc.filename}
+                </p>
+                <p className="text-[12px] text-ink-muted">{doc.chunks} chunks</p>
+              </div>
+            </div>
+          ))}
+          {docCount > 3 && (
             <Link
               href="/documents"
-              className="text-sm text-primary hover:underline"
+              className="inline-block text-[13px] text-accent hover:underline"
             >
-              View all
+              View all documents
             </Link>
           )}
         </div>
-
-        {docsLoading && (
-          <div className="flex justify-center py-10">
-            <Loader />
-          </div>
-        )}
-
-        {!docsLoading && recentDocs.length === 0 && (
-          <Card>
-            <CardContent className="py-10 text-center text-sm text-muted-foreground">
-              No documents yet.{" "}
-              <Link href="/documents" className="text-primary hover:underline">
-                Upload your first file
-              </Link>{" "}
-              to get started.
-            </CardContent>
-          </Card>
-        )}
-
-        {!docsLoading && recentDocs.length > 0 && (
-          <div className="grid gap-3">
-            {recentDocs.map((doc) => (
-              <Card key={doc.id}>
-                <CardContent className="flex items-center justify-between gap-4 p-4">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <FileText
-                      className="h-5 w-5 shrink-0 text-primary"
-                      aria-hidden="true"
-                    />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">
-                        {doc.filename}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {doc.chunks} chunks
-                      </p>
-                    </div>
-                  </div>
-                  <Badge variant="success">{doc.status}</Badge>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }

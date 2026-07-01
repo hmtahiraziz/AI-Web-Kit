@@ -12,3 +12,9 @@ class QueryRequest(BaseModel):
     top_k: int | None = Field(default=None, ge=1, le=20, alias="topK")
 
     model_config = {"populate_by_name": True}
+
+
+class ChatRequest(BaseModel):
+    """Payload for ``POST /api/chat/stream`` (direct LLM, no RAG)."""
+
+    message: str = Field(..., min_length=1, max_length=4000)

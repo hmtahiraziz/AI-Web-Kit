@@ -1,13 +1,13 @@
 # SA AI Web Kit — Backend
 
 Production-ready RAG backend for the SA AI Web Kit. Built with **FastAPI**,
-**LangChain**, **FAISS**, and **OpenAI**. Runs independently of the Next.js
+**LangChain**, **FAISS**, and **Google Gemini**. Runs independently of the Next.js
 frontend and exposes a typed REST API under `/api`.
 
 ## Requirements
 
 - Python 3.12+
-- OpenAI API key
+- Google Gemini API key ([AI Studio](https://aistudio.google.com/apikey))
 - Clerk application (for JWT verification) — optional in dev with `AUTH_DISABLED=true`
 
 ## Installation
@@ -29,7 +29,7 @@ cp .env.example .env
 Edit `.env` and set at minimum:
 
 ```env
-OPENAI_API_KEY=sk-...
+GOOGLE_API_KEY=your-gemini-api-key
 AUTH_DISABLED=true          # local dev without Clerk
 FRONTEND_URL=http://localhost:3000
 ```
@@ -45,7 +45,8 @@ AUTH_DISABLED=false
 ## Running
 
 ```bash
-uvicorn main:app --reload --port 8000
+# Windows (if uvicorn.exe is blocked by App Control, use python -m):
+.\.venv\Scripts\python.exe -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 - API docs: http://localhost:8000/docs
@@ -61,9 +62,10 @@ NEXT_PUBLIC_API_URL=http://localhost:8000/api
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `OPENAI_API_KEY` | — | OpenAI API key |
-| `OPENAI_CHAT_MODEL` | `gpt-4.1-mini` | Chat model for answers |
-| `OPENAI_EMBEDDING_MODEL` | `text-embedding-3-small` | Embedding model |
+| `GOOGLE_API_KEY` | — | Google Gemini API key |
+| `GEMINI_CHAT_MODEL` | `gemini-2.0-flash` | Chat model for answers |
+| `GEMINI_EMBEDDING_MODEL` | `gemini-embedding-001` | Embedding model |
+| `GEMINI_EMBEDDING_DIMENSION` | `768` | FAISS vector dimension (must match embedding model) |
 | `CLERK_JWKS_URL` | — | Clerk JWKS endpoint for JWT verification |
 | `CLERK_ISSUER` | — | Expected JWT issuer (optional) |
 | `CLERK_AUDIENCE` | — | Expected JWT audience (optional) |
@@ -77,6 +79,12 @@ NEXT_PUBLIC_API_URL=http://localhost:8000/api
 | `MAX_UPLOAD_MB` | `25` | Max upload file size |
 | `APP_VERSION` | `1.0.0` | Reported in health response |
 | `LOG_LEVEL` | `INFO` | Python log level |
+
+## Migrating from OpenAI
+
+If you previously used OpenAI embeddings, **delete** `faiss_index/*` (keep `.gitkeep`)
+and re-upload documents. Embedding dimensions differ (`768` for Gemini vs `1536` for
+OpenAI `text-embedding-3-small`).
 
 ## API endpoints
 
@@ -93,63 +101,6 @@ All routes are prefixed with `/api`. Protected routes require
 | `POST` | `/api/query` | Yes | Grounded answer + citations (JSON) |
 | `POST` | `/api/query/stream` | Yes | Streaming answer (plain text) |
 
-### Example: ingest
-
-```bash
-curl -X POST http://localhost:8000/api/ingest \
-  -H "Authorization: Bearer <token>" \
-  -F "file=@handbook.pdf"
-```
-
-Response:
-
-```json
-{
-  "success": true,
-  "documentId": "abc123...",
-  "chunks": 84
-}
-```
-
-### Example: query
-
-```bash
-curl -X POST http://localhost:8000/api/query \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What is the refund policy?"}'
-```
-
-Response:
-
-```json
-{
-  "answer": "...",
-  "citations": [
-    { "source": "handbook.pdf", "page": 12, "section": "Refund Policy" }
-  ]
-}
-```
-
-## Project structure
-
-```text
-backend/
-├── app/
-│   ├── api/              # FastAPI routers (health, ingest, documents, query, auth)
-│   ├── core/             # config, security, logging, DI, exceptions
-│   ├── models/           # Pydantic request/response models
-│   ├── services/         # Business logic (RAG pipeline, LLM, ingest)
-│   ├── vectorstore/      # FAISS wrapper (only place FAISS is used)
-│   ├── utils/            # File + text helpers
-│   └── server.py         # App factory (CORS, exception handlers)
-├── uploads/              # Persisted uploaded files
-├── faiss_index/          # FAISS index + document registry
-├── main.py               # Uvicorn entrypoint
-├── requirements.txt
-└── .env.example
-```
-
 ## RAG flow
 
 ### Ingest
@@ -161,7 +112,7 @@ Extract text (LangChain loaders)
         ↓
 Split into chunks (RecursiveCharacterTextSplitter)
         ↓
-Generate embeddings (OpenAIEmbeddings)
+Generate embeddings (GoogleGenerativeAIEmbeddings)
         ↓
 Store in FAISS + save metadata registry
 ```
@@ -175,7 +126,7 @@ Embed query → similarity search (top K chunks)
         ↓
 Build grounded prompt with context
         ↓
-OpenAI chat model → answer
+Gemini chat model → answer
         ↓
 Return answer + citations (source, page, section)
 ```
@@ -184,13 +135,15 @@ Return answer + citations (source, page, section)
 
 - **SOLID / DI**: Routers depend on services via FastAPI `Depends`. Services
   depend on abstractions (LangChain `Embeddings`, `FAISSStore`), not SDKs directly.
-- **Single responsibility**: Only `llm_service` calls OpenAI chat; only
+- **Single responsibility**: Only `llm_service` calls Gemini chat; only
   `embedding_service` creates embeddings; only `faiss_store` touches FAISS.
-- **Centralized errors**: Domain exceptions (`AuthError`, `NotFoundError`, …)
-  map to HTTP status codes via global handlers.
-- **Logging**: Uploads, queries, errors, and request latency are logged.
+- **Empty index**: FAISS is initialized without an API call so listing documents
+  works even before the first ingest.
 
 ## Frontend integration
 
 The Next.js frontend consumes this API via Axios (and `fetch` for streaming).
 Set `NEXT_PUBLIC_API_URL=http://localhost:8000/api` in `frontend/.env.local`.
+
+Mobile (Expo) apps use the same API — set `EXPO_PUBLIC_API_URL` to your LAN IP
+with `/api` suffix when testing on a physical device.

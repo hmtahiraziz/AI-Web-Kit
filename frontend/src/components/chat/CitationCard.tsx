@@ -1,8 +1,5 @@
 import { FileText } from "lucide-react";
 import type { Citation } from "@/types/chat";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 
 export function CitationCard({
   citation,
@@ -19,23 +16,26 @@ export function CitationCard({
     .join(" · ");
 
   return (
-    <Card
-      className={cn(
-        "cursor-default p-3 transition-colors hover:border-primary/40 hover:bg-muted/30",
-      )}
-    >
+    <div className="rounded-card border border-ink-border bg-surface p-3 shadow-card">
       <div className="flex items-center gap-2">
-        <Badge variant="outline" className="shrink-0">
-          <FileText className="h-3 w-3" aria-hidden="true" />
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-accent-light text-[11px] font-medium text-accent-dark">
           {index + 1}
-        </Badge>
-        <p className="truncate text-sm font-medium" title={citation.source}>
+        </span>
+        <FileText
+          className="h-3.5 w-3.5 shrink-0 text-accent"
+          strokeWidth={1.75}
+          aria-hidden
+        />
+        <p
+          className="truncate text-[13px] font-medium text-ink-primary"
+          title={citation.source}
+        >
           {citation.source}
         </p>
       </div>
       {location && (
-        <p className="mt-2 text-xs text-muted-foreground">{location}</p>
+        <p className="mt-1.5 text-[12px] text-ink-muted">{location}</p>
       )}
-    </Card>
+    </div>
   );
 }

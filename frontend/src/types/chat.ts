@@ -14,4 +14,15 @@ export type ChatMessage = {
   createdAt: number;
 };
 
+export type Conversation = {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  createdAt: number;
+  updatedAt: number;
+};
+
 export type ChatStatus = "idle" | "submitted" | "streaming" | "error";
+
+/** RAG uses uploaded documents; direct is general LLM chat. */
+export type ChatMode = "rag" | "direct";

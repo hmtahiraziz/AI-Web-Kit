@@ -13,6 +13,8 @@ import json
 import threading
 from pathlib import Path
 
+import faiss
+from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -29,9 +31,16 @@ _REGISTRY_FILE = "registry.json"
 class FAISSStore:
     """Reusable wrapper around a persisted FAISS index + document registry."""
 
-    def __init__(self, index_dir: Path, embeddings: Embeddings) -> None:
+    def __init__(
+        self,
+        index_dir: Path,
+        embeddings: Embeddings,
+        *,
+        embedding_dim: int = 768,
+    ) -> None:
         self._dir = index_dir
         self._embeddings = embeddings
+        self._embedding_dim = embedding_dim
         self._store: FAISS | None = None
         self._lock = threading.RLock()
         self._dir.mkdir(parents=True, exist_ok=True)
@@ -43,14 +52,15 @@ class FAISSStore:
         return self._dir / f"{_INDEX_NAME}.faiss"
 
     def create_index(self) -> FAISS:
-        """Create an empty index in memory (persisted on first write)."""
-        # FAISS requires at least one text to infer dimensionality; seed with a
-        # placeholder, then immediately drop it.
-        store = FAISS.from_texts(["__seed__"], self._embeddings)
-        seed_ids = list(store.index_to_docstore_id.values())
-        store.delete(seed_ids)
-        self._store = store
-        return store
+        """Create an empty in-memory index without calling the embedding API."""
+        index = faiss.IndexFlatL2(self._embedding_dim)
+        self._store = FAISS(
+            embedding_function=self._embeddings,
+            index=index,
+            docstore=InMemoryDocstore(),
+            index_to_docstore_id={},
+        )
+        return self._store
 
     def load_index(self) -> FAISS:
         """Load the index from disk, or create a fresh one if none exists."""
@@ -96,10 +106,16 @@ class FAISSStore:
             self.persist()
         return len(documents)
 
+    def has_documents(self) -> bool:
+        """True when the registry lists at least one ingested document."""
+        return bool(self._read_registry())
+
     def similarity_search(
         self, query: str, k: int = 5
     ) -> list[tuple[Document, float]]:
         """Return up to ``k`` (document, score) pairs for ``query``."""
+        if not self.has_documents():
+            return []
         with self._lock:
             store = self._ensure_store()
             return store.similarity_search_with_score(query, k=k)

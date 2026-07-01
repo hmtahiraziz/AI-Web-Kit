@@ -53,5 +53,9 @@ class QueryResponse(BaseModel):
     citations: list[Citation] = Field(default_factory=list)
 
 
+class CitationsResponse(BaseModel):
+    citations: list[Citation] = Field(default_factory=list)
+
+
 class ErrorResponse(BaseModel):
     detail: str

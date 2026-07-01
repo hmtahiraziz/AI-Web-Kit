@@ -15,6 +15,10 @@ export type QueryResponse = {
   citations: Citation[];
 };
 
+export type CitationsResponse = {
+  citations: Citation[];
+};
+
 export type ApiError = {
   message: string;
   status?: number;

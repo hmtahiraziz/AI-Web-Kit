@@ -27,11 +27,14 @@ class Settings(BaseSettings):
         case_sensitive=False,
     )
 
-    # OpenAI
-    openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
-    openai_chat_model: str = Field(default="gpt-4.1-mini", alias="OPENAI_CHAT_MODEL")
-    openai_embedding_model: str = Field(
-        default="text-embedding-3-small", alias="OPENAI_EMBEDDING_MODEL"
+    # Google Gemini
+    google_api_key: str = Field(default="", alias="GOOGLE_API_KEY")
+    gemini_chat_model: str = Field(default="gemini-2.0-flash", alias="GEMINI_CHAT_MODEL")
+    gemini_embedding_model: str = Field(
+        default="gemini-embedding-001", alias="GEMINI_EMBEDDING_MODEL"
+    )
+    gemini_embedding_dimension: int = Field(
+        default=768, alias="GEMINI_EMBEDDING_DIMENSION"
     )
 
     # Clerk / auth

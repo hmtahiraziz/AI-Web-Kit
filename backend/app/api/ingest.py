@@ -7,9 +7,10 @@ import time
 from fastapi import APIRouter, File, UploadFile
 
 from app.core.dependencies import CurrentUser, IngestServiceDep, SettingsDep
-from app.core.exceptions import UnsupportedFileError
+from app.core.exceptions import AppError, UnsupportedFileError
 from app.core.logger import get_logger
 from app.models.responses import IngestResponse
+from app.utils.google_errors import map_google_exception
 
 logger = get_logger(__name__)
 
@@ -32,11 +33,17 @@ async def ingest_document(
             f"File exceeds maximum size of {settings.max_upload_mb} MB"
         )
 
-    record = service.ingest(
-        filename=file.filename or "document",
-        content_type=file.content_type,
-        data=data,
-    )
+    try:
+        record = service.ingest(
+            filename=file.filename or "document",
+            content_type=file.content_type,
+            data=data,
+        )
+    except AppError:
+        raise
+    except Exception as exc:
+        logger.exception("Ingest failed user=%s filename=%s", user.user_id, file.filename)
+        raise map_google_exception(exc) from exc
 
     elapsed_ms = (time.perf_counter() - start) * 1000
     logger.info(
