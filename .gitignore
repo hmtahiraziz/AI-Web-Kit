@@ -1,16 +1,64 @@
+# =============================================================================
+# SA AI Web Kit — single root .gitignore (backend + frontend)
+# =============================================================================
+
 # ---- Secrets / environment ----
-.env
-.env.*
 !.env.example
 !.env.local.example
 *.pem
 *.key
-# Clerk may write secrets here
 .clerk/
 
-# ---- Python (backend) ----
+# ---- Backend (Python / FastAPI) ----
+backend/.env
+backend/.venv/
+backend/venv/
+backend/env/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.py[cod]
+backend/**/*.py[cod]
+backend/*.pyc
+backend/**/*.pyc
+backend/*.egg-info/
+backend/.pytest_cache/
+backend/.mypy_cache/
+backend/.ruff_cache/
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/faiss_index/*
+!backend/faiss_index/.gitkeep
+
+# ---- Frontend (Next.js) ----
+frontend/node_modules/
+frontend/.pnp
+frontend/.pnp.*
+frontend/.yarn/*
+!frontend/.yarn/patches
+!frontend/.yarn/plugins
+!frontend/.yarn/releases
+!frontend/.yarn/versions
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/coverage/
+frontend/.vercel/
+frontend/.env*
+frontend/.env.local
+!frontend/.env.example
+!frontend/.env.local.example
+frontend/.clerk/
+frontend/*.tsbuildinfo
+frontend/next-env.d.ts
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.pnpm-debug.log*
+
+# ---- Python (repo-wide fallbacks) ----
 __pycache__/
 *.py[cod]
+*.pyc
 .venv/
 venv/
 env/
@@ -19,13 +67,7 @@ env/
 .mypy_cache/
 .ruff_cache/
 
-# ---- Vector store / uploads (runtime data) ----
-backend/faiss_index/*
-!backend/faiss_index/.gitkeep
-backend/uploads/*
-!backend/uploads/.gitkeep
-
-# ---- Node / Next.js (frontend) ----
+# ---- Node / Next.js (repo-wide fallbacks) ----
 node_modules/
 .next/
 out/
@@ -45,5 +87,9 @@ yarn-error.log*
 # ---- OS / editor ----
 .DS_Store
 Thumbs.db
+Desktop.ini
 *.swp
 .idea/
+*.code-workspace
+.cursor/
+config.bat
