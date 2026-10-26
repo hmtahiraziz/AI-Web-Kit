@@ -93,14 +93,23 @@ def save_turn(
     mode: str | None = None,
     user_message_id: str | None = None,
     assistant_message_id: str | None = None,
+    has_image: bool = False,
 ) -> None:
-    """Persist one user + assistant exchange after a successful stream."""
+    """Persist one user + assistant exchange after a successful stream.
+
+    Image bytes are never written to Postgres. When ``has_image`` is true the
+    stored user content is prefixed with a lightweight marker for history UIs.
+    """
+    stored_user = user_message
+    if has_image and not stored_user.startswith("[Image]"):
+        stored_user = f"[Image] {stored_user}".strip()
+
     ensure_conversation(
         session,
         user_id=user_id,
         conversation_id=conversation_id,
         mode=mode,
-        title_from=user_message,
+        title_from=stored_user,
     )
     upsert_message(
         session,
@@ -108,7 +117,7 @@ def save_turn(
         user_id=user_id,
         conversation_id=conversation_id,
         role="user",
-        content=user_message,
+        content=stored_user,
         mode=mode,
     )
     upsert_message(
@@ -121,6 +130,39 @@ def save_turn(
         mode=mode,
     )
     session.commit()
+
+
+def list_messages_for_context(
+    session: Session,
+    user_id: str,
+    conversation_id: str,
+    *,
+    limit: int = 20,
+    exclude_ids: set[str] | None = None,
+) -> list[tuple[str, str]]:
+    """Return recent ``(role, content)`` pairs for LLM context (oldest first)."""
+    if limit <= 0:
+        return []
+    exclude = exclude_ids or set()
+    rows = session.scalars(
+        select(ChatMessageRow)
+        .where(
+            ChatMessageRow.user_id == user_id,
+            ChatMessageRow.conversation_id == conversation_id,
+        )
+        .order_by(ChatMessageRow.created_at.desc())
+        .limit(max(limit * 2, limit))  # over-fetch to allow exclusions
+    ).all()
+
+    selected: list[tuple[str, str]] = []
+    for row in rows:
+        if row.id in exclude:
+            continue
+        selected.append((row.role, row.content))
+        if len(selected) >= limit:
+            break
+    selected.reverse()
+    return selected
 
 
 def list_conversations(session: Session, user_id: str) -> list[dict]:

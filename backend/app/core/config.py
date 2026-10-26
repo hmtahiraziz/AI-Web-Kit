@@ -60,6 +60,16 @@ class Settings(BaseSettings):
     chunk_overlap: int = Field(default=150, alias="CHUNK_OVERLAP")
     max_upload_mb: int = Field(default=25, alias="MAX_UPLOAD_MB")
 
+    # Chat image understanding (Ragmob multimodal)
+    chat_image_max_mb: float = Field(default=8.0, alias="CHAT_IMAGE_MAX_MB")
+    chat_image_max_dimension: int = Field(
+        default=4096, alias="CHAT_IMAGE_MAX_DIMENSION"
+    )
+    chat_image_context_ttl_seconds: int = Field(
+        default=3600, alias="CHAT_IMAGE_CONTEXT_TTL_SECONDS"
+    )
+    chat_history_limit: int = Field(default=20, alias="CHAT_HISTORY_LIMIT")
+
     # App
     app_version: str = Field(default="1.0.0", alias="APP_VERSION")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")

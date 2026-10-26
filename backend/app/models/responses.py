@@ -60,3 +60,65 @@ class CitationsResponse(BaseModel):
 
 class ErrorResponse(BaseModel):
     detail: str
+
+
+class ChatImageUploadResponse(BaseModel):
+    """Returned by ``POST /api/chat/images`` (Ragmob vision upload)."""
+
+    image_id: str = Field(..., serialization_alias="imageId")
+    mime_type: str = Field(..., serialization_alias="mimeType")
+    width: int
+    height: int
+    expires_in_seconds: int = Field(..., serialization_alias="expiresInSeconds")
+
+    model_config = {"populate_by_name": True}
+
+
+class ChatMessageResponse(BaseModel):
+    id: str
+    role: str
+    content: str
+    created_at: int = Field(..., serialization_alias="createdAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class ConversationSummaryResponse(BaseModel):
+    id: str
+    title: str
+    mode: str | None = None
+    updated_at: int = Field(..., serialization_alias="updatedAt")
+    created_at: int | None = Field(default=None, serialization_alias="createdAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class ConversationDetailResponse(ConversationSummaryResponse):
+    messages: list[ChatMessageResponse] = Field(default_factory=list)
+
+
+class DeleteConversationResponse(BaseModel):
+    success: bool = True
+    conversation_id: str = Field(..., serialization_alias="conversationId")
+
+    model_config = {"populate_by_name": True}
+
+
+class FeedbackResponse(BaseModel):
+    success: bool = True
+    message_id: str | None = Field(default=None, serialization_alias="messageId")
+    rating: str | None = None
+
+    model_config = {"populate_by_name": True}
+
+
+class ReportResponse(BaseModel):
+    success: bool = True
+    id: str | None = None
+
+    model_config = {"populate_by_name": True}
+
+
+class DeleteAccountResponse(BaseModel):
+    success: bool = True
+    deleted: dict[str, int] = Field(default_factory=dict)

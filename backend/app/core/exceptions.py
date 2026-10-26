@@ -39,6 +39,11 @@ class UnsupportedFileError(AppError):
     detail = "Unsupported file type"
 
 
+class PayloadTooLargeError(AppError):
+    status_code = 413
+    detail = "Payload too large"
+
+
 class RateLimitError(AppError):
     status_code = 429
     detail = "Rate limit exceeded"

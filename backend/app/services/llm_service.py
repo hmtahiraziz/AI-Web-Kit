@@ -34,6 +34,40 @@ def _message_text(content: object) -> str:
     return str(content)
 
 
+def _parts_from_human_content(content: object) -> list[types.Part]:
+    """Build Gemini parts from a string or multimodal content list.
+
+    Multimodal list items use::
+        {"type": "text", "text": "..."}
+        {"type": "image", "data": <bytes>, "mime_type": "image/jpeg"}
+    """
+    if isinstance(content, list):
+        parts: list[types.Part] = []
+        for item in content:
+            if not isinstance(item, dict):
+                text = _message_text(item)
+                if text:
+                    parts.append(types.Part.from_text(text=text))
+                continue
+            kind = item.get("type")
+            if kind == "text":
+                text = _message_text(item.get("text"))
+                if text:
+                    parts.append(types.Part.from_text(text=text))
+            elif kind == "image":
+                data = item.get("data")
+                mime = item.get("mime_type") or item.get("mimeType") or "image/jpeg"
+                if isinstance(data, (bytes, bytearray)) and data:
+                    parts.append(
+                        types.Part.from_bytes(data=bytes(data), mime_type=str(mime))
+                    )
+        if not parts:
+            parts.append(types.Part.from_text(text=""))
+        return parts
+
+    return [types.Part.from_text(text=_message_text(content))]
+
+
 def _to_genai_request(
     messages: list[BaseMessage],
 ) -> tuple[str | None, list[types.Content]]:
@@ -48,7 +82,7 @@ def _to_genai_request(
             contents.append(
                 types.Content(
                     role="user",
-                    parts=[types.Part.from_text(text=_message_text(message.content))],
+                    parts=_parts_from_human_content(message.content),
                 )
             )
         elif isinstance(message, AIMessage):

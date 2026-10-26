@@ -11,7 +11,11 @@ from app.models.responses import HealthResponse
 router = APIRouter(tags=["health"])
 
 
-@router.get("/health", response_model=HealthResponse)
+@router.get(
+    "/health",
+    summary="Liveness / dependency check",
+    response_model=HealthResponse,
+)
 def health() -> HealthResponse:
     db = check_database()
     overall = "healthy" if db["status"] in {"ok", "unconfigured"} else "degraded"

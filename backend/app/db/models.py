@@ -76,3 +76,40 @@ class ChatMessageRow(Base):
         server_default=func.now(),
         nullable=False,
     )
+
+
+class MessageFeedbackRow(Base):
+    """Thumbs up/down on an assistant message (Play AI / quality signal)."""
+
+    __tablename__ = "message_feedback"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(128), index=True, nullable=False)
+    conversation_id: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    message_id: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    rating: Mapped[str] = mapped_column(String(8), nullable=False)  # up | down
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=_utcnow,
+        server_default=func.now(),
+        nullable=False,
+    )
+
+
+class MessageReportRow(Base):
+    """User report of a harmful / inappropriate assistant response."""
+
+    __tablename__ = "message_reports"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(128), index=True, nullable=False)
+    conversation_id: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    message_id: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    reason: Mapped[str] = mapped_column(String(32), nullable=False)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=_utcnow,
+        server_default=func.now(),
+        nullable=False,
+    )
