@@ -17,12 +17,22 @@ def map_google_exception(exc: Exception) -> AppError:
     if isinstance(exc, AppError):
         return exc
 
-    status: int | None = None
-    message = str(exc)
-
     if isinstance(exc, ClientError):
         status = getattr(exc, "status_code", None) or getattr(exc, "code", None)
         message = str(exc)
+        upper = message.upper()
+        if status == 429 or "RESOURCE_EXHAUSTED" in upper:
+            return RateLimitError("Gemini rate limit exceeded. Try again shortly.")
+        if status == 401 or "UNAUTHENTICATED" in upper:
+            return UpstreamError(
+                "Gemini authentication failed. Check GOOGLE_API_KEY in backend .env."
+            )
+        if status == 503:
+            return UpstreamError("Gemini is temporarily unavailable. Try again shortly.")
+        return UpstreamError(f"Gemini request failed: {message}")
+
+    status: int | None = None
+    message = str(exc)
 
     if isinstance(exc, GoogleGenerativeAIError):
         message = str(exc)

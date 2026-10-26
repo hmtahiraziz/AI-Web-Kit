@@ -7,6 +7,7 @@ from pathlib import Path
 
 from app.core.config import Settings
 from app.core.logger import get_logger
+from app.db import documents_repo, get_session_factory
 from app.models.document import DocumentRecord
 from app.services.chunk_service import ChunkService
 from app.services.document_loader import DocumentLoaderService
@@ -51,6 +52,19 @@ class IngestService:
             status="ready",
         )
         self._store.register_document(record)
+
+        # Dual-write document metadata to Neon when DATABASE_URL is set.
+        factory = get_session_factory()
+        if factory is not None:
+            session = factory()
+            try:
+                documents_repo.upsert_document(session, record)
+            except Exception:
+                logger.exception("Failed to persist document=%s to Neon", document_id)
+                session.rollback()
+            finally:
+                session.close()
+
         logger.info(
             "Ingested document=%s filename=%s chunks=%d", document_id, filename, added
         )

@@ -32,10 +32,13 @@ from app.vectorstore.faiss_store import FAISSStore
 
 def clear_dependency_caches() -> None:
     """Drop cached settings and services (e.g. after ``.env`` changes)."""
+    from app.db.session import clear_db_caches
+
     get_settings.cache_clear()
     get_llm_service.cache_clear()
     get_embedding_service.cache_clear()
     get_faiss_store.cache_clear()
+    clear_db_caches()
 
 
 @lru_cache(maxsize=1)

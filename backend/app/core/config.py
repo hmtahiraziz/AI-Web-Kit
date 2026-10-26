@@ -47,6 +47,9 @@ class Settings(BaseSettings):
     # CORS / frontend
     frontend_url: str = Field(default="http://localhost:3000", alias="FRONTEND_URL")
 
+    # Neon Postgres (document registry + optional chat persistence)
+    database_url: str = Field(default="", alias="DATABASE_URL")
+
     # Storage (relative paths are resolved against the backend root)
     faiss_index_dir: str = Field(default="faiss_index", alias="FAISS_INDEX_DIR")
     upload_dir: str = Field(default="uploads", alias="UPLOAD_DIR")

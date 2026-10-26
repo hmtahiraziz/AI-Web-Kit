@@ -24,3 +24,7 @@ python-jose[cryptography]>=3.3.0
 
 # Resilience
 tenacity>=9.0.0
+
+# Neon Postgres
+sqlalchemy>=2.0.0
+psycopg[binary]>=3.1.0

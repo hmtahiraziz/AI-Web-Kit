@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.core.config import get_settings
+from app.db import check_database
 from app.models.responses import HealthResponse
 
 router = APIRouter(tags=["health"])
@@ -12,4 +13,10 @@ router = APIRouter(tags=["health"])
 
 @router.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
-    return HealthResponse(status="healthy", version=get_settings().app_version)
+    db = check_database()
+    overall = "healthy" if db["status"] in {"ok", "unconfigured"} else "degraded"
+    return HealthResponse(
+        status=overall,
+        version=get_settings().app_version,
+        database=db["status"],
+    )

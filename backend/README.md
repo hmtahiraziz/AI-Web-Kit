@@ -71,6 +71,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000/api
 | `CLERK_AUDIENCE` | — | Expected JWT audience (optional) |
 | `AUTH_DISABLED` | `false` | Bypass JWT verification (dev only) |
 | `FRONTEND_URL` | `http://localhost:3000` | CORS allowed origin |
+| `DATABASE_URL` | — | Neon Postgres connection string (document registry) |
 | `FAISS_INDEX_DIR` | `faiss_index` | Persisted vector index directory |
 | `UPLOAD_DIR` | `uploads` | Uploaded source files |
 | `TOP_K` | `5` | Chunks retrieved per query |

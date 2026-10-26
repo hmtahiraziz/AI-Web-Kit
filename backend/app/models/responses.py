@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 class HealthResponse(BaseModel):
     status: str = "healthy"
     version: str = "1.0.0"
+    database: str = "unconfigured"
 
 
 class IngestResponse(BaseModel):

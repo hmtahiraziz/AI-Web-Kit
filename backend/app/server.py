@@ -41,9 +41,18 @@ def create_app() -> FastAPI:
 
     @app.on_event("startup")
     def _startup() -> None:
+        from app.db import init_db
+
         clear_dependency_caches()
         settings = get_settings()
         settings.ensure_dirs()
+        try:
+            if init_db():
+                logger.info("Neon Postgres connected")
+            else:
+                logger.warning("DATABASE_URL not set — running without Postgres")
+        except Exception:
+            logger.exception("Failed to initialize Neon Postgres")
         paths = sorted(app.openapi().get("paths", {}).keys())
         logger.info("SA AI Web Kit API v%s started (%d routes)", settings.app_version, len(paths))
         for path in paths:
