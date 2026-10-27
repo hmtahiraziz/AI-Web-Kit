@@ -1,17 +1,21 @@
-"""LLM wrapper — the ONLY place Gemini chat models are called.
+"""LLM wrapper — the ONLY place OpenAI chat models are called.
 
-Uses the native ``google.genai`` client so both legacy ``AIza`` and newer
-``AQ.`` auth keys from Google AI Studio work correctly.
+Uses the official ``openai`` client for chat completions (including vision).
 """
 
 from __future__ import annotations
 
+import base64
 from collections.abc import Iterator
+from typing import Any
 
-from google import genai
-from google.genai import types
-from google.genai.errors import ClientError
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from openai import (
+    APIError,
+    AuthenticationError,
+    OpenAI,
+    RateLimitError as OpenAIRateLimitError,
+)
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -34,98 +38,95 @@ def _message_text(content: object) -> str:
     return str(content)
 
 
-def _parts_from_human_content(content: object) -> list[types.Part]:
-    """Build Gemini parts from a string or multimodal content list.
+def _parts_from_human_content(content: object) -> str | list[dict[str, Any]]:
+    """Build OpenAI user content from a string or multimodal content list.
 
     Multimodal list items use::
         {"type": "text", "text": "..."}
         {"type": "image", "data": <bytes>, "mime_type": "image/jpeg"}
     """
     if isinstance(content, list):
-        parts: list[types.Part] = []
+        parts: list[dict[str, Any]] = []
         for item in content:
             if not isinstance(item, dict):
                 text = _message_text(item)
                 if text:
-                    parts.append(types.Part.from_text(text=text))
+                    parts.append({"type": "text", "text": text})
                 continue
             kind = item.get("type")
             if kind == "text":
                 text = _message_text(item.get("text"))
                 if text:
-                    parts.append(types.Part.from_text(text=text))
+                    parts.append({"type": "text", "text": text})
             elif kind == "image":
                 data = item.get("data")
                 mime = item.get("mime_type") or item.get("mimeType") or "image/jpeg"
                 if isinstance(data, (bytes, bytearray)) and data:
+                    b64 = base64.b64encode(bytes(data)).decode("ascii")
                     parts.append(
-                        types.Part.from_bytes(data=bytes(data), mime_type=str(mime))
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{mime};base64,{b64}",
+                            },
+                        }
                     )
         if not parts:
-            parts.append(types.Part.from_text(text=""))
+            return ""
         return parts
 
-    return [types.Part.from_text(text=_message_text(content))]
+    return _message_text(content)
 
 
-def _to_genai_request(
-    messages: list[BaseMessage],
-) -> tuple[str | None, list[types.Content]]:
-    """Convert LangChain messages to Gemini system instruction + contents."""
-    system_instruction: str | None = None
-    contents: list[types.Content] = []
+def _to_openai_messages(messages: list[BaseMessage]) -> list[dict[str, Any]]:
+    """Convert LangChain messages to OpenAI chat completion messages."""
+    result: list[dict[str, Any]] = []
 
     for message in messages:
         if isinstance(message, SystemMessage):
-            system_instruction = _message_text(message.content)
+            result.append(
+                {"role": "system", "content": _message_text(message.content)}
+            )
         elif isinstance(message, HumanMessage):
-            contents.append(
-                types.Content(
-                    role="user",
-                    parts=_parts_from_human_content(message.content),
-                )
+            result.append(
+                {"role": "user", "content": _parts_from_human_content(message.content)}
             )
         elif isinstance(message, AIMessage):
-            contents.append(
-                types.Content(
-                    role="model",
-                    parts=[types.Part.from_text(text=_message_text(message.content))],
-                )
+            result.append(
+                {"role": "assistant", "content": _message_text(message.content)}
             )
 
-    return system_instruction, contents
+    return result
 
 
-def _generation_config(
-    settings: Settings,
-    system_instruction: str | None,
-) -> types.GenerateContentConfig:
-    return types.GenerateContentConfig(
-        temperature=0.1,
-        system_instruction=system_instruction,
-    )
-
-
-def _map_client_error(exc: ClientError) -> UpstreamError | RateLimitError:
-    status = getattr(exc, "status_code", None) or getattr(exc, "code", None)
-    message = str(exc)
-    upper = message.upper()
-
-    if status == 429 or "RESOURCE_EXHAUSTED" in upper:
-        return RateLimitError("Gemini rate limit exceeded. Try again shortly.")
-    if status == 401 or "UNAUTHENTICATED" in upper:
+def _map_openai_error(exc: Exception) -> UpstreamError | RateLimitError:
+    if isinstance(exc, OpenAIRateLimitError):
+        return RateLimitError("OpenAI rate limit exceeded. Try again shortly.")
+    if isinstance(exc, AuthenticationError):
         return UpstreamError(
-            "Gemini authentication failed. Check GOOGLE_API_KEY in backend .env."
+            "OpenAI authentication failed. Check OPENAI_API_KEY in backend .env."
         )
-    if status == 503:
-        return UpstreamError("Gemini is temporarily unavailable. Try again shortly.")
-    return UpstreamError(f"Gemini request failed: {message}")
+    if isinstance(exc, APIError):
+        status = getattr(exc, "status_code", None)
+        message = str(exc)
+        if status == 429:
+            return RateLimitError("OpenAI rate limit exceeded. Try again shortly.")
+        if status in {401, 403}:
+            return UpstreamError(
+                "OpenAI authentication failed. Check OPENAI_API_KEY in backend .env."
+            )
+        if status in {500, 502, 503}:
+            return UpstreamError(
+                "OpenAI is temporarily unavailable. Try again shortly."
+            )
+        return UpstreamError(f"OpenAI request failed: {message}")
+    return UpstreamError("OpenAI request failed")
 
 
 class LLMService:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
-        self._client = genai.Client(api_key=settings.google_api_key)
+        self._client = OpenAI(api_key=settings.openai_api_key)
 
     @retry(
         retry=retry_if_exception_type(RateLimitError),
@@ -134,41 +135,46 @@ class LLMService:
         reraise=True,
     )
     def chat(self, messages: list[BaseMessage]) -> str:
-        system_instruction, contents = _to_genai_request(messages)
+        payload = _to_openai_messages(messages)
         try:
-            response = self._client.models.generate_content(
-                model=self._settings.gemini_chat_model,
-                contents=contents,
-                config=_generation_config(self._settings, system_instruction),
+            response = self._client.chat.completions.create(
+                model=self._settings.openai_chat_model,
+                messages=payload,
+                temperature=0.1,
             )
-        except ClientError as exc:
-            logger.error("Gemini API error: %s", exc)
-            raise _map_client_error(exc) from exc
+        except (APIError, AuthenticationError, OpenAIRateLimitError) as exc:
+            logger.error("OpenAI API error: %s", exc)
+            raise _map_openai_error(exc) from exc
         except Exception as exc:
-            logger.error("Gemini API error: %s", exc)
-            raise UpstreamError("Gemini request failed") from exc
+            logger.error("OpenAI API error: %s", exc)
+            raise UpstreamError("OpenAI request failed") from exc
 
-        return response.text or ""
+        choice = response.choices[0] if response.choices else None
+        return (choice.message.content if choice and choice.message else None) or ""
 
     def stream(self, messages: list[BaseMessage]) -> Iterator[str]:
         """Yield answer tokens as plain text deltas."""
-        system_instruction, contents = _to_genai_request(messages)
+        payload = _to_openai_messages(messages)
         try:
-            stream = self._client.models.generate_content_stream(
-                model=self._settings.gemini_chat_model,
-                contents=contents,
-                config=_generation_config(self._settings, system_instruction),
+            stream = self._client.chat.completions.create(
+                model=self._settings.openai_chat_model,
+                messages=payload,
+                temperature=0.1,
+                stream=True,
             )
             for chunk in stream:
-                text = chunk.text
+                if not chunk.choices:
+                    continue
+                delta = chunk.choices[0].delta
+                text = delta.content if delta else None
                 if text:
                     yield text
-        except ClientError as exc:
-            logger.error("Gemini API error (stream): %s", exc)
-            raise _map_client_error(exc) from exc
+        except (APIError, AuthenticationError, OpenAIRateLimitError) as exc:
+            logger.error("OpenAI API error (stream): %s", exc)
+            raise _map_openai_error(exc) from exc
         except Exception as exc:
-            logger.error("Gemini API error (stream): %s", exc)
-            raise UpstreamError("Gemini request failed") from exc
+            logger.error("OpenAI API error (stream): %s", exc)
+            raise UpstreamError("OpenAI request failed") from exc
 
     def summarize(self, text: str) -> str:
         messages = [

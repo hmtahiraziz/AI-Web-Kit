@@ -332,7 +332,7 @@ export function useChat() {
 
       if (!receivedContent && !controller.signal.aborted) {
         throw new Error(
-          "The server returned an empty response. Check GOOGLE_API_KEY in backend/.env.",
+          "The server returned an empty response. Check OPENAI_API_KEY in backend/.env.",
         );
       }
 

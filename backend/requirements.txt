@@ -8,13 +8,12 @@ python-multipart>=0.0.12
 # LangChain stack
 langchain>=0.3.0
 langchain-community>=0.3.0
-langchain-google-genai>=2.0.0
+langchain-openai>=0.2.0
 langchain-text-splitters>=0.3.0
 
 # Vector store + models
 faiss-cpu>=1.9.0
-google-generativeai>=0.8.0
-google-genai>=1.0.0
+openai>=1.50.0
 
 # Chat image validation (vision uploads)
 Pillow>=10.0.0

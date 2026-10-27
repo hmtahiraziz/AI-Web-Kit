@@ -41,7 +41,7 @@ from app.models.responses import (
     ReportResponse,
 )
 from app.services.image_context_cache import get_image_context_cache
-from app.utils.google_errors import map_google_exception
+from app.utils.openai_errors import map_openai_exception
 from app.utils.image_utils import ValidatedImage, validate_chat_image
 from app.utils.streaming import continue_token_stream, start_token_stream
 
@@ -256,14 +256,14 @@ def _build_streaming_response(
             image_bytes=image.data if image else None,
             image_mime=image.mime_type if image else None,
         ),
-        on_error=map_google_exception,
+        on_error=map_openai_exception,
     )
 
     def token_generator():
         chunks: list[str] = []
         try:
             for piece in continue_token_stream(
-                prefix, token_iter, on_error=map_google_exception
+                prefix, token_iter, on_error=map_openai_exception
             ):
                 chunks.append(piece)
                 yield piece
@@ -276,7 +276,7 @@ def _build_streaming_response(
             raise
         except Exception as exc:
             logger.exception("Chat stream failed user=%s", user_id)
-            raise map_google_exception(exc) from exc
+            raise map_openai_exception(exc) from exc
 
     return StreamingResponse(
         token_generator(),
@@ -381,7 +381,7 @@ def _form_turn(
         413: {"description": "Image too large"},
         422: {"description": "Invalid image or payload"},
         429: {"description": "Rate limited"},
-        502: {"description": "Upstream Gemini error"},
+        502: {"description": "Upstream OpenAI error"},
     },
 )
 async def chat_stream(
@@ -500,12 +500,13 @@ def _store_uploaded_image(
             width=validated.width,
             height=validated.height,
         )
+    # Snake_case keys for response_model validation; FastAPI serializes via aliases.
     return {
-        "imageId": image_id,
-        "mimeType": validated.mime_type,
+        "image_id": image_id,
+        "mime_type": validated.mime_type,
         "width": validated.width,
         "height": validated.height,
-        "expiresInSeconds": settings.chat_image_context_ttl_seconds,
+        "expires_in_seconds": settings.chat_image_context_ttl_seconds,
     }
 
 

@@ -59,7 +59,7 @@ OPENAPI_TAGS = [
     {"name": "health", "description": "Liveness and dependency status"},
     {"name": "auth", "description": "Clerk JWT helpers"},
     {"name": "account", "description": "Account lifecycle (Ragmob)"},
-    {"name": "chat", "description": "Direct Gemini chat, history, feedback (Ragmob)"},
+    {"name": "chat", "description": "Direct OpenAI chat, history, feedback (Ragmob)"},
     {"name": "documents", "description": "Document ingest and registry (RAG)"},
     {"name": "query", "description": "Grounded RAG Q&A"},
 ]
