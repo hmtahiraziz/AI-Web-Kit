@@ -20,7 +20,7 @@ ALLOWED_IMAGE_MIME: set[str] = {
     "image/webp",
 }
 
-# Normalize aliases Gemini / clients may send.
+# Normalize aliases OpenAI / clients may send.
 _MIME_NORMALIZE: dict[str, str] = {
     "image/jpg": "image/jpeg",
 }
