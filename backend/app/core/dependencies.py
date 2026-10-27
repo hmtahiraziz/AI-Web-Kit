@@ -52,7 +52,7 @@ def get_faiss_store() -> FAISSStore:
     store = FAISSStore(
         settings.faiss_index_path,
         get_embedding_service().embeddings,
-        embedding_dim=settings.gemini_embedding_dimension,
+        embedding_dim=settings.openai_embedding_dimension,
     )
     store.load_index()
     return store

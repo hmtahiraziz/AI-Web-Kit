@@ -3,8 +3,6 @@
 # =============================================================================
 
 # ---- Secrets / environment ----
-.env
-.env.*
 !.env.example
 !.env.local.example
 *.pem
@@ -92,6 +90,6 @@ Thumbs.db
 Desktop.ini
 *.swp
 .idea/
-.vscode/
 *.code-workspace
 .cursor/
+config.bat

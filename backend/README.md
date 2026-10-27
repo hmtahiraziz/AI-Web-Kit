@@ -1,13 +1,13 @@
 # SA AI Web Kit — Backend
 
 Production-ready RAG backend for the SA AI Web Kit. Built with **FastAPI**,
-**LangChain**, **FAISS**, and **Google Gemini**. Runs independently of the Next.js
+**LangChain**, **FAISS**, and **OpenAI**. Runs independently of the Next.js
 frontend and exposes a typed REST API under `/api`.
 
 ## Requirements
 
 - Python 3.12+
-- Google Gemini API key ([AI Studio](https://aistudio.google.com/apikey))
+- OpenAI API key ([platform.openai.com](https://platform.openai.com/api-keys))
 - Clerk application (for JWT verification) — optional in dev with `AUTH_DISABLED=true`
 
 ## Installation
@@ -29,7 +29,7 @@ cp .env.example .env
 Edit `.env` and set at minimum:
 
 ```env
-GOOGLE_API_KEY=your-gemini-api-key
+OPENAI_API_KEY=your-openai-api-key
 AUTH_DISABLED=true          # local dev without Clerk
 FRONTEND_URL=http://localhost:3000
 ```
@@ -62,10 +62,10 @@ NEXT_PUBLIC_API_URL=http://localhost:8000/api
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `GOOGLE_API_KEY` | — | Google Gemini API key |
-| `GEMINI_CHAT_MODEL` | `gemini-2.0-flash` | Chat model for answers |
-| `GEMINI_EMBEDDING_MODEL` | `gemini-embedding-001` | Embedding model |
-| `GEMINI_EMBEDDING_DIMENSION` | `768` | FAISS vector dimension (must match embedding model) |
+| `OPENAI_API_KEY` | — | OpenAI API key |
+| `OPENAI_CHAT_MODEL` | `gpt-4o-mini` | Chat model for answers (vision-capable) |
+| `OPENAI_EMBEDDING_MODEL` | `text-embedding-3-small` | Embedding model |
+| `OPENAI_EMBEDDING_DIMENSION` | `1536` | FAISS vector dimension (must match embedding model) |
 | `CLERK_JWKS_URL` | — | Clerk JWKS endpoint for JWT verification |
 | `CLERK_ISSUER` | — | Expected JWT issuer (optional) |
 | `CLERK_AUDIENCE` | — | Expected JWT audience (optional) |
@@ -81,11 +81,11 @@ NEXT_PUBLIC_API_URL=http://localhost:8000/api
 | `APP_VERSION` | `1.0.0` | Reported in health response |
 | `LOG_LEVEL` | `INFO` | Python log level |
 
-## Migrating from OpenAI
+## Migrating from Gemini
 
-If you previously used OpenAI embeddings, **delete** `faiss_index/*` (keep `.gitkeep`)
-and re-upload documents. Embedding dimensions differ (`768` for Gemini vs `1536` for
-OpenAI `text-embedding-3-small`).
+If you previously used Gemini embeddings, **delete** `faiss_index/*` (keep `.gitkeep`)
+and re-upload documents. Embedding dimensions differ (`1536` for OpenAI
+`text-embedding-3-small` vs `768` for Gemini).
 
 ## API endpoints
 
@@ -113,7 +113,7 @@ Extract text (LangChain loaders)
         ↓
 Split into chunks (RecursiveCharacterTextSplitter)
         ↓
-Generate embeddings (GoogleGenerativeAIEmbeddings)
+Generate embeddings (OpenAIEmbeddings)
         ↓
 Store in FAISS + save metadata registry
 ```
@@ -127,7 +127,7 @@ Embed query → similarity search (top K chunks)
         ↓
 Build grounded prompt with context
         ↓
-Gemini chat model → answer
+OpenAI chat model → answer
         ↓
 Return answer + citations (source, page, section)
 ```
@@ -136,7 +136,7 @@ Return answer + citations (source, page, section)
 
 - **SOLID / DI**: Routers depend on services via FastAPI `Depends`. Services
   depend on abstractions (LangChain `Embeddings`, `FAISSStore`), not SDKs directly.
-- **Single responsibility**: Only `llm_service` calls Gemini chat; only
+- **Single responsibility**: Only `llm_service` calls OpenAI chat; only
   `embedding_service` creates embeddings; only `faiss_store` touches FAISS.
 - **Empty index**: FAISS is initialized without an API call so listing documents
   works even before the first ingest.
